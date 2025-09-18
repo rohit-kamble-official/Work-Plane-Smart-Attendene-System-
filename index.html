@@ -6,14 +6,11 @@
     <title>Interactive Attendance System Workflow</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Chosen Palette: Warm Neutrals -->
-    <!-- Application Structure Plan: The SPA is designed with a top-level tabbed navigation for each user role (Teacher, Student, Admin, System) and an initial Overview/Dashboard. This structure was chosen to break down the complex, multi-faceted workflow into clear, digestible sections. Users can focus on a single user journey at a time, which is more intuitive than trying to comprehend the entire system from a single, dense flowchart. The flow for each role is presented as a sequence of interactive cards, making the process easy to follow. A dashboard with charts is included to provide an immediate high-level analytical summary. This user-centric design prioritizes clarity and guided exploration over a literal translation of the source diagram. -->
-    <!-- Visualization & Content Choices: Report Info: User workflow steps. -> Goal: Organize & Explain. -> Viz/Presentation Method: Sequenced, styled cards using HTML/CSS. -> Interaction: Users navigate between role-based flows via tabs. -> Justification: Cards are a modern, responsive, and easily scannable way to present sequential information. | Report Info: System features & complexity. -> Goal: Compare & Inform. -> Viz/Presentation Method: Bar chart for workflow steps per role, Donut chart for verification methods. -> Interaction: Chart.js tooltips on hover provide details. -> Justification: Charts offer a quick, quantitative summary of the system's architecture, highlighting key components and comparing role complexities effectively. -> Library/Method: Chart.js (Canvas). -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
         body {
             background-color: #FDFBF8;
             font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
         }
         .nav-btn {
             transition: all 0.3s ease;
@@ -49,6 +46,95 @@
                 height: 400px;
             }
         }
+        .flow-node {
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            line-height: 1.25;
+            min-height: 4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            font-weight: 500;
+        }
+        .flow-node:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 10px rgba(0,0,0,0.1);
+        }
+        .flow-diamond {
+            width: 120px;
+            height: 120px;
+            transform: rotate(45deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 0;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .flow-diamond:hover {
+            transform: rotate(45deg) scale(1.05);
+            box-shadow: 0 6px 10px rgba(0,0,0,0.1);
+        }
+        .flow-diamond span {
+            transform: rotate(-45deg);
+            font-size: 0.875rem;
+            text-align: center;
+            display: block;
+            line-height: 1.25;
+            font-weight: 500;
+        }
+        .flow-connector {
+            position: relative;
+        }
+        .flow-connector.vertical {
+            width: 2px;
+            height: 2rem;
+            margin-left: auto;
+            margin-right: auto;
+            background-color: #6B7280;
+        }
+        .flow-connector.horizontal {
+            height: 2px;
+            width: 2rem;
+            background-color: #6B7280;
+        }
+        .flow-connector.arrow-down::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 6px solid #6B7280;
+        }
+        .flow-joiner {
+            width: 100%;
+            height: 2px;
+            background-color: #6B7280;
+            position: relative;
+        }
+        .flow-joiner::before,
+        .flow-joiner::after {
+            content: '';
+            position: absolute;
+            top: -2px;
+            width: 2px;
+            height: 4px;
+            background-color: #6B7280;
+        }
+        .flow-joiner::before {
+            left: 0;
+        }
+        .flow-joiner::after {
+            right: 0;
+        }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -64,6 +150,7 @@
 
         <nav class="flex flex-wrap justify-center gap-2 sm:gap-4 mb-12">
             <button data-target="overview" class="nav-btn active text-sm sm:text-base font-medium py-2 px-4 rounded-full bg-white text-gray-700 shadow-sm border border-gray-200">📊 Overview & Analytics</button>
+            <button data-target="workflow" class="nav-btn text-sm sm:text-base font-medium py-2 px-4 rounded-full bg-white text-gray-700 shadow-sm border border-gray-200">🔄 End-to-End Workflow</button>
             <button data-target="teacher" class="nav-btn text-sm sm:text-base font-medium py-2 px-4 rounded-full bg-white text-gray-700 shadow-sm border border-gray-200">👩‍🏫 Teacher</button>
             <button data-target="student" class="nav-btn text-sm sm:text-base font-medium py-2 px-4 rounded-full bg-white text-gray-700 shadow-sm border border-gray-200">👨‍🎓 Student</button>
             <button data-target="admin" class="nav-btn text-sm sm:text-base font-medium py-2 px-4 rounded-full bg-white text-gray-700 shadow-sm border border-gray-200">🏫 Admin</button>
@@ -87,6 +174,72 @@
                         <h3 class="text-xl font-semibold text-center mb-4">Student Verification Methods</h3>
                         <div class="chart-container">
                             <canvas id="verificationMethodsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="workflow" class="content-section hidden">
+                <div class="text-center mb-12">
+                     <h2 class="text-3xl font-bold text-gray-900">End-to-End Workflow</h2>
+                     <p class="mt-2 text-md text-gray-600 max-w-3xl mx-auto">This diagram visualizes the complete, unified process for attendance, highlighting the key decision points and the paths taken for both online and offline data synchronization.</p>
+                </div>
+                <div class="flex flex-col items-center">
+                    <div class="flow-node bg-sky-700 text-white max-w-sm w-full">Teacher Logs In</div>
+                    <div class="flow-connector vertical arrow-down"></div>
+                    <div class="flow-node bg-sky-700 text-white w-full max-w-sm">Select Class & Period</div>
+                    <div class="flow-connector vertical arrow-down"></div>
+                    <div class="flow-node bg-sky-700 text-white w-full max-w-sm">Generate Session Key / OTP</div>
+                    <div class="flow-connector vertical arrow-down"></div>
+                    <div class="flow-node bg-teal-700 text-white w-full max-w-sm">Students Open App & Select Class</div>
+                    <div class="flow-connector vertical arrow-down"></div>
+                    <div class="flow-diamond w-36 h-36 p-0 text-center bg-amber-600 text-white">
+                        <span>Choose Check-in Method</span>
+                    </div>
+                    <div class="flex justify-center w-full max-w-2xl mt-4">
+                        <div class="flex flex-col items-center w-1/3">
+                            <div class="flow-node bg-teal-700 text-white w-40">Face Recognition + Liveness</div>
+                            <div class="flow-connector vertical arrow-down"></div>
+                            <div class="flow-node bg-slate-700 text-white w-40">System Verifies Identity & Liveness</div>
+                        </div>
+                        <div class="flex flex-col items-center w-1/3">
+                            <div class="flow-node bg-teal-700 text-white w-40">QR Code Scan</div>
+                            <div class="flow-connector vertical arrow-down"></div>
+                            <div class="flow-node bg-slate-700 text-white w-40">System Verifies Identity & Liveness</div>
+                        </div>
+                        <div class="flex flex-col items-center w-1/3">
+                            <div class="flow-node bg-teal-700 text-white w-40">OTP + GPS Verification</div>
+                            <div class="flow-connector vertical arrow-down"></div>
+                            <div class="flow-node bg-slate-700 text-white w-40">System Verifies Identity & Liveness</div>
+                        </div>
+                    </div>
+                    <div class="flow-joiner mt-4 max-w-2xl"></div>
+                    <div class="flow-connector vertical arrow-down"></div>
+                    <div class="flow-node bg-slate-700 text-white w-full max-w-sm">Check Device ID & Location</div>
+                    <div class="flow-connector vertical arrow-down"></div>
+                    <div class="flow-node bg-green-700 text-white w-full max-w-sm font-bold">Mark Attendance</div>
+                    <div class="flow-connector vertical arrow-down"></div>
+                    <div class="flow-diamond w-36 h-36 p-0 text-center bg-amber-600 text-white">
+                        <span>Internet Available?</span>
+                    </div>
+                    <div class="flex flex-col sm:flex-row justify-center w-full max-w-md mt-4 gap-4 sm:gap-12">
+                        <div class="flex flex-col items-center">
+                            <div class="mt-2 text-sm text-gray-600">Yes</div>
+                            <div class="flow-connector vertical h-8 arrow-down"></div>
+                             <div class="flow-node bg-indigo-700 text-white w-full max-w-xs">Save Attendance Online</div>
+                             <div class="flow-connector vertical arrow-down h-8"></div>
+                             <div class="flow-node bg-sky-700 text-white w-full max-w-xs">Teachers View Attendance Dashboard</div>
+                             <div class="flow-connector vertical arrow-down h-8"></div>
+                             <div class="flow-node bg-rose-700 text-white w-full max-w-xs">Admins Generate Reports (PDF/Excel)</div>
+                             <div class="flow-connector vertical arrow-down h-8"></div>
+                             <div class="flow-node bg-rose-700 text-white w-full max-w-xs">Government-Ready Reports</div>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <div class="mt-2 text-sm text-gray-600">No</div>
+                            <div class="flow-connector vertical h-8 arrow-down"></div>
+                            <div class="flow-node bg-indigo-700 text-white w-full max-w-xs">Save Attendance Offline & Sync Later</div>
+                            <div class="flow-connector vertical arrow-down h-8"></div>
+                             <div class="flow-node bg-sky-700 text-white w-full max-w-xs">Teachers View Attendance Dashboard</div>
                         </div>
                     </div>
                 </div>
@@ -386,6 +539,5 @@
             });
         });
     </script>
-
 </body>
 </html>

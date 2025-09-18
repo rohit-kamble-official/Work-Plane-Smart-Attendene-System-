@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Attendance System Workflow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: The SPA is designed with a top-level tabbed navigation for each user role (Teacher, Student, Admin, System) and an initial Overview/Dashboard. This structure was chosen to break down the complex, multi-faceted workflow into clear, digestible sections. Users can focus on a single user journey at a time, which is more intuitive than trying to comprehend the entire system from a single, dense flowchart. The flow for each role is presented as a sequence of interactive cards, making the process easy to follow. A dashboard with charts is included to provide an immediate high-level analytical summary. This user-centric design prioritizes clarity and guided exploration over a literal translation of the source diagram. -->
+    <!-- Visualization & Content Choices: Report Info: User workflow steps. -> Goal: Organize & Explain. -> Viz/Presentation Method: Sequenced, styled cards using HTML/CSS. -> Interaction: Users navigate between role-based flows via tabs. -> Justification: Cards are a modern, responsive, and easily scannable way to present sequential information. | Report Info: System features & complexity. -> Goal: Compare & Inform. -> Viz/Presentation Method: Bar chart for workflow steps per role, Donut chart for verification methods. -> Interaction: Chart.js tooltips on hover provide details. -> Justification: Charts offer a quick, quantitative summary of the system's architecture, highlighting key components and comparing role complexities effectively. -> Library/Method: Chart.js (Canvas). -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            background-color: #FDFBF8;
+            font-family: 'Inter', sans-serif;
+        }
+        .nav-btn {
+            transition: all 0.3s ease;
+        }
+        .nav-btn.active {
+            background-color: #004AAD;
+            color: #FFFFFF;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .flow-step-card {
+            background-color: #FFFFFF;
+            border: 1px solid #E5E7EB;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .flow-step-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+         @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="text-gray-800">
+
+    <div class="container mx-auto px-4 py-8">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-gray-900">Smart Attendance System</h1>
+            <p class="mt-2 text-lg text-gray-600">An Interactive Exploration of the Complete Workflow</p>
+        </header>
+
+        <nav class="flex flex-wrap justify-center gap-2 sm:gap-4 mb-12">
+            <button data-target="overview" class="nav-btn active text-sm sm:text-base font-medium py-2 px-4 rounded-full bg-white text-gray-700 shadow-sm border border-gray-200">📊 Overview & Analytics</button>
+            <button data-target="teacher" class="nav-btn text-sm sm:text-base font-medium py-2 px-4 rounded-full bg-white text-gray-700 shadow-sm border border-gray-200">👩‍🏫 Teacher</button>
+            <button data-target="student" class="nav-btn text-sm sm:text-base font-medium py-2 px-4 rounded-full bg-white text-gray-700 shadow-sm border border-gray-200">👨‍🎓 Student</button>
+            <button data-target="admin" class="nav-btn text-sm sm:text-base font-medium py-2 px-4 rounded-full bg-white text-gray-700 shadow-sm border border-gray-200">🏫 Admin</button>
+            <button data-target="backend" class="nav-btn text-sm sm:text-base font-medium py-2 px-4 rounded-full bg-white text-gray-700 shadow-sm border border-gray-200">🌐 Backend & Sync</button>
+        </nav>
+
+        <main>
+            <section id="overview" class="content-section">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold text-gray-900">System Dashboard</h2>
+                    <p class="mt-2 text-md text-gray-600 max-w-3xl mx-auto">This section provides a high-level analytical view of the attendance system's architecture. The charts below summarize the complexity of each user workflow and the variety of verification methods employed, offering a quick insight into the system's core components and security measures.</p>
+                </div>
+                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                    <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+                        <h3 class="text-xl font-semibold text-center mb-4">Workflow Steps per Role</h3>
+                        <div class="chart-container">
+                            <canvas id="workflowStepsChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+                        <h3 class="text-xl font-semibold text-center mb-4">Student Verification Methods</h3>
+                        <div class="chart-container">
+                            <canvas id="verificationMethodsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="teacher" class="content-section hidden">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold text-gray-900">Teacher Workflow</h2>
+                     <p class="mt-2 text-md text-gray-600 max-w-3xl mx-auto">This flow outlines the teacher's journey, from starting a class session to marking attendance and saving the final record. The process is designed for efficiency and provides tools for real-time monitoring and exception handling, ensuring accurate data capture.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="flow-step-card">
+                        <p class="text-2xl mb-3">📱</p>
+                        <h3 class="font-bold text-lg">1. Open & Login</h3>
+                        <p class="text-gray-600">Launches the app, which auto-checks the local database, and logs in via PIN, Password, or SSO to access the dashboard.</p>
+                    </div>
+                     <div class="flow-step-card">
+                        <p class="text-2xl mb-3">🏫</p>
+                        <h3 class="font-bold text-lg">2. Select Class</h3>
+                        <p class="text-gray-600">Chooses a specific class and period from the timetable or uses a "Start Now" option for unscheduled sessions.</p>
+                    </div>
+                    <div class="flow-step-card">
+                        <p class="text-2xl mb-3">🚀</p>
+                        <h3 class="font-bold text-lg">3. Start Session</h3>
+                        <p class="text-gray-600">Initiates the attendance process, generating a unique Session ID, a one-time password (OTP), and setting a geo-fence.</p>
+                    </div>
+                     <div class="flow-step-card">
+                        <p class="text-2xl mb-3">⏱️</p>
+                        <h3 class="font-bold text-lg">4. Display OTP</h3>
+                        <p class="text-gray-600">The UI confirms the session is live and displays the OTP (e.g., XXXX), which is valid for 90 seconds. A button to end the session is visible.</p>
+                    </div>
+                    <div class="flow-step-card">
+                        <p class="text-2xl mb-3">🤖</p>
+                        <h3 class="font-bold text-lg">5. Enable Auto-Marking (Optional)</h3>
+                        <p class="text-gray-600">Can enable automated attendance marking using facial recognition or student RFID card taps.</p>
+                    </div>
+                    <div class="flow-step-card">
+                        <p class="text-2xl mb-3">📋</p>
+                        <h3 class="font-bold text-lg">6. Monitor Live List</h3>
+                        <p class="text-gray-600">Watches a real-time list as students check in, showing their name, photo, and attendance status (e.g., Present).</p>
+                    </div>
+                    <div class="flow-step-card">
+                        <p class="text-2xl mb-3">✍️</p>
+                        <h3 class="font-bold text-lg">7. Handle Exceptions</h3>
+                        <p class="text-gray-600">Manually marks students, adds remarks for specific cases, or flags potential disputes for admin review.</p>
+                    </div>
+                    <div class="flow-step-card">
+                        <p class="text-2xl mb-3">📊</p>
+                        <h3 class="font-bold text-lg">8. End Session & Review</h3>
+                        <p class="text-gray-600">Stops the session and is presented with a summary screen showing present, absent, and flagged students.</p>
+                    </div>
+                    <div class="flow-step-card">
+                        <p class="text-2xl mb-3">💾</p>
+                        <h3 class="font-bold text-lg">9. Save & Export</h3>
+                        <p class="text-gray-600">Confirms the session details, queues the data for syncing, and can export the record as a CSV or PDF file.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="student" class="content-section hidden">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold text-gray-900">Student Workflow</h2>
+                    <p class="mt-2 text-md text-gray-600 max-w-3xl mx-auto">This process details how a student marks their attendance. The workflow emphasizes security and accuracy through a multi-factor verification system. It also empowers students with self-service options to view their records and apply for leave.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="flow-step-card">
+                        <p class="text-2xl mb-3">👋</p>
+                        <h3 class="font-bold text-lg">1. Open & Login</h3>
+                        <p class="text-gray-600">Opens the app/web portal and logs in using their ID/Password, biometrics, or a quick QR code scan.</p>
+                    </div>
+                    <div class="flow-step-card">
+                        <p class="text-2xl mb-3">📅</p>
+                        <h3 class="font-bold text-lg">2. Find Session</h3>
+                        <p class="text-gray-600">The landing page displays today's classes and highlights any active attendance sessions available to join.</p>
+                    </div>
+                    <div class="flow-step-card">
+                        <p class="text-2xl mb-3">✅</p>
+                        <h3 class="font-bold text-lg">3. Perform Verification</h3>
+                        <p class="text-gray-600">After joining, the student performs the required checks: entering OTP, verifying location (GPS/Wi-Fi), and completing a liveness check, OR scanning a QR/tapping an RFID card.</p>
+                    </div>
+                    <div class="flow-step-card">
+                        <p class="text-2xl mb-3">📤</p>
+                        <h3 class="font-bold text-lg">4. Submit & Get Result</h3>
+                        <p class="text-gray-600">Submits the check-in and receives an immediate result: 'Present' or 'Failed'. If failed, they can retry or request help.</p>
+                    </div>
+                    <div class="flow-step-card">
+                        <p class="text-2xl mb-3">❓</p>
+                        <h3 class="font-bold text-lg">5. Request Help (If Failed)</h3>
+                        <p class="text-gray-600">If verification fails, they can raise a help request, which automatically attaches a selfie and geo-location log for review.</p>
+                    </div>
+                    <div class="flow-step-card">
+                        <p class="text-2xl mb-3">📈</p>
+                        <h3 class="font-bold text-lg">6. View Attendance</h3>
+                        <p class="text-gray-600">Can access their attendance history, viewing daily status and monthly percentage reports.</p>
+                    </div>
+                    <div class="flow-step-card">
+                        <p class="text-2xl mb-3">📄</p>
+                        <h3 class="font-bold text-lg">7. Apply for Leave</h3>
+                        <p class="text-gray-600">Has the option to apply for leave by filling out a reason and attaching supporting documents or photos.</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="admin" class="content-section hidden">
+                <div class="text-center mb-12">
+                     <h2 class="text-3xl font-bold text-gray-900">Admin / Principal Workflow</h2>
+                     <p class="mt-2 text-md text-gray-600 max-w-3xl mx-auto">The admin workflow focuses on oversight, reporting, and system management. From a central dashboard, administrators can monitor school-wide attendance, resolve issues, communicate with parents, and configure the system's operational parameters.</p>
+                </div>
+                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="flow-step-card">
+                        <p class="text-2xl mb-3">🔐</p>
+                        <h3 class="font-bold text-lg">1. Login to Dashboard</h3>
+                        <p class="text-gray-600">Logs into the secure admin web dashboard (2FA suggested) to get a school-wide snapshot, including alerts and flagged disputes.</p>
+                    </div>
+                    <div class="flow-step-card">
+                        <p class="text-2xl mb-3">🔍</p>
+                        <h3 class="font-bold text-lg">2. Generate Reports</h3>
+                        <p class="text-gray-600">Selects and generates various reports, with filters for date range, class, teacher, or individual student.</p>
+                    </div>
+                    <div class="flow-step-card">
+                        <p class="text-2xl mb-3">⚖️</p>
+                        <h3 class="font-bold text-lg">3. Resolve Disputes</h3>
+                        <p class="text-gray-600">Reviews and resolves flagged disputes by viewing the evidence trail (OTP, GPS data, liveness check, teacher remarks).</p>
+                    </div>
+                    <div class="flow-step-card">
+                        <p class="text-2xl mb-3">📜</p>
+                        <h3 class="font-bold text-lg">4. Government Reporting</h3>
+                        <p class="text-gray-600">Generates specialized reports for government compliance, such as for Mid-Day Meal schemes or scholarships.</p>
+                    </div>
+                    <div class="flow-step-card">
+                        <p class="text-2xl mb-3">💬</p>
+                        <h3 class="font-bold text-lg">5. Send Parent Alerts</h3>
+                        <p class="text-gray-600">Sends alerts to parents via SMS or WhatsApp, either targeted to specific students or in bulk to entire classes.</p>
+                    </div>
+                    <div class="flow-step-card">
+                        <p class="text-2xl mb-3">⚙️</p>
+                        <h3 class="font-bold text-lg">6. Configure System Settings</h3>
+                        <p class="text-gray-600">Manages system-wide settings like the geo-fence radius, session timeouts, supported languages, and data sync rules.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="backend" class="content-section hidden">
+                <div class="text-center mb-12">
+                     <h2 class="text-3xl font-bold text-gray-900">Backend & Sync Workflow</h2>
+                     <p class="mt-2 text-md text-gray-600 max-w-3xl mx-auto">This section describes the critical background processes that ensure data integrity and system reliability. It covers offline data storage, synchronization with the central server, validation checks, and the jobs that power analytics and reporting.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="flow-step-card">
+                        <p class="text-2xl mb-3">📦</p>
+                        <h3 class="font-bold text-lg">1. Local Storage</h3>
+                        <p class="text-gray-600">The client-side app (teacher/student) stores pending check-ins and session data locally, ensuring offline functionality.</p>
+                    </div>
+                    <div class="flow-step-card">
+                        <p class="text-2xl mb-3">🔄</p>
+                        <h3 class="font-bold text-lg">2. Auto-Sync</h3>
+                        <p class="text-gray-600">When an internet connection is available, the app automatically attempts to sync the locally stored data with the server.</p>
+                    </div>
+                    <div class="flow-step-card">
+                        <p class="text-2xl mb-3">🛡️</p>
+                        <h3 class="font-bold text-lg">3. Server Validation</h3>
+                        <p class="text-gray-600">The server validates incoming data, checking for OTP expiry, device ID integrity, location accuracy, and liveness scores.</p>
+                    </div>
+                    <div class="flow-step-card">
+                        <p class="text-2xl mb-3">🗃️</p>
+                        <h3 class="font-bold text-lg">4. Persist Data</h3>
+                        <p class="text-gray-600">Valid data is persisted as the canonical record in the main attendance database.</p>
+                    </div>
+                    <div class="flow-step-card">
+                        <p class="text-2xl mb-3">🚩</p>
+                        <h3 class="font-bold text-lg">5. Conflict Handling</h3>
+                        <p class="text-gray-600">Invalid or conflicting data is rejected or flagged for admin review, with a reason returned to the source.</p>
+                    </div>
+                    <div class="flow-step-card">
+                        <p class="text-2xl mb-3">⚙️</p>
+                        <h3 class="font-bold text-lg">6. Analytics & Backup</h3>
+                        <p class="text-gray-600">A daily job rolls up data for analytics dashboards, and nightly jobs perform compressed backups for audit purposes.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const navButtons = document.querySelectorAll('.nav-btn');
+            const contentSections = document.querySelectorAll('.content-section');
+
+            navButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetId = button.dataset.target;
+
+                    navButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+
+                    contentSections.forEach(section => {
+                        if (section.id === targetId) {
+                            section.classList.remove('hidden');
+                        } else {
+                            section.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+            
+            const workflowStepsCtx = document.getElementById('workflowStepsChart').getContext('2d');
+            new Chart(workflowStepsCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Teacher', 'Student', 'Admin', 'Backend'],
+                    datasets: [{
+                        label: 'Number of Core Steps',
+                        data: [9, 7, 6, 6],
+                        backgroundColor: [
+                            'rgba(0, 74, 173, 0.7)',
+                            'rgba(0, 128, 55, 0.7)',
+                            'rgba(255, 178, 0, 0.7)',
+                            'rgba(154, 154, 154, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(0, 74, 173, 1)',
+                            'rgba(0, 128, 55, 1)',
+                            'rgba(255, 178, 0, 1)',
+                            'rgba(154, 154, 154, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                             callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += context.parsed.y + ' steps';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Steps'
+                            }
+                        }
+                    }
+                }
+            });
+
+            const verificationMethodsCtx = document.getElementById('verificationMethodsChart').getContext('2d');
+            new Chart(verificationMethodsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['OTP', 'GPS/Wi-Fi', 'Liveness Check', 'QR Scan', 'RFID Tap'],
+                    datasets: [{
+                        label: 'Verification Methods',
+                        data: [1, 1, 1, 1, 1], 
+                        backgroundColor: [
+                            '#4A90E2',
+                            '#50E3C2',
+                            '#F5A623',
+                            '#BD10E0',
+                            '#9013FE'
+                        ],
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                         legend: {
+                            position: 'bottom',
+                        },
+                        tooltip: {
+                             callbacks: {
+                                label: function(context) {
+                                    return ` ${context.label}: A key method for student verification.`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
